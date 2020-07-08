@@ -8,8 +8,6 @@
 
 int main(int argc, char** argv)
 {
-  auto p = new ::mg::yield();
-
   ::testing::InitGoogleTest(&argc, argv);
 
 #if defined(__MINGW32__)
@@ -19,8 +17,6 @@ int main(int argc, char** argv)
 #else
   std::setlocale(LC_ALL, "ru_RU.UTF-8");
 #endif
-
-  delete p;
 
   return RUN_ALL_TESTS();
 }

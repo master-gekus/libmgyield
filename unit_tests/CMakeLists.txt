@@ -29,6 +29,7 @@ set(GTEST_LIBS_DIR ${BINARY_DIR}/lib)
 
 add_executable(${PROJECT_NAME}
   mgyield_unit_tests_main.cpp
+  mgyield_unit_tests_empty.cpp
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE

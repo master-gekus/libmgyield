@@ -2,9 +2,5 @@
 
 namespace mg {
 
-yield::yield()
-{
-
-}
 
 } // namespace mg
