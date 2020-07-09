@@ -4,8 +4,6 @@
 #include <clocale>
 #include <gtest/gtest.h>
 
-#include "mgyield.h"
-
 int main(int argc, char** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);

@@ -7,6 +7,7 @@ set(MGYIELD_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 add_library(${PROJECT_NAME} STATIC
   ${MGYIELD_INCLUDE_DIR}/mgyield.h
+  ${MGYIELD_INCLUDE_DIR}/mgyield_p.h
   ${MGYIELD_SOURCE_DIR}/mgyield.cpp
   )
 
