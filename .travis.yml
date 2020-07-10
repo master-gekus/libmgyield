@@ -1,14 +1,14 @@
-﻿dist:     trusty
+﻿dist:     bionic
 sudo:     required
 language: cpp
 
 os:
   - linux
-#  - osx
+  - osx
 
 compiler:
     - gcc
-#    - clang
+    - clang
 
 env:
   - TARGET_CPU=amd64 BUILD_CONFIGURATION=Debug
