@@ -1,0 +1,25 @@
+version: 1.0.{build}
+image:
+  - Visual Studio 2015
+  - Visual Studio 2017
+
+configuration:
+  - Debug
+  - Release
+
+platform:
+  - x86
+  - x64
+
+clone_depth: 1
+
+build_script:
+  - cmd: call ci\appveyor\setenv.bat "%APPVEYOR_BUILD_WORKER_IMAGE%" "%PLATFORM%"
+  - cmd: mkdir build
+  - cmd: cd build
+  - cmd: cmake .. -DCMAKE_BUILD_TYPE=%CONFIGURATION% -G "NMake Makefiles"
+  - cmd: cmake --build .
+
+test_script:
+  - cmd: cd unit_tests
+  - cmd: ctest -C %CONFIGURATION% --output-on-failure
