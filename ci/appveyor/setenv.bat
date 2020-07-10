@@ -18,6 +18,19 @@ if /i "%_vs%" == "Visual Studio 2015" (
   goto error
 )
 
+if /i "%_vs%" == "Visual Studio 2017" (
+  if /i "%_ps%" == "x64" (
+    call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat"
+    goto done
+  )
+  if /i "%_ps%" == "x86" (
+    call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars32.bat"
+    goto done
+  )
+  echo Unsupported platform: %_ps%
+  goto error
+)
+
 echo Version of Visual studio is not supported: %_vs%
 :error
 exit 1
