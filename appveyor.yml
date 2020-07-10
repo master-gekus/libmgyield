@@ -18,3 +18,7 @@ build_script:
   - cmd: cd build
   - cmd: cmake .. -DCMAKE_BUILD_TYPE=%CONFIGURATION% -G "NMake Makefiles"
   - cmd: cmake --build .
+
+test_script:
+  - cmd: cd unit_tests
+  - cmd: ctest -C %CONFIGURATION% --output-on-failure
