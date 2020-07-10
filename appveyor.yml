@@ -13,7 +13,7 @@ platform:
 clone_depth: 1
 
 build_script:
-  - cmd: call ci\appveyor\setenv.bat %APPVEYOR_BUILD_WORKER_IMAGE% %PLATFORM%
+  - cmd: call ci\appveyor\setenv.bat "%APPVEYOR_BUILD_WORKER_IMAGE%" "%PLATFORM%"
   - cmd: mkdir build
   - cmd: cd build
   - cmd: cmake .. -DCMAKE_BUILD_TYPE=%CONFIGURATION% -G "NMake Makefiles"
