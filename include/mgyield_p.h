@@ -7,6 +7,10 @@
 #ifndef MGYIELD_P_H_INCLUDED
 #define MGYIELD_P_H_INCLUDED
 
+#include <type_traits>
+#include <functional>
+#include <thread>
+
 namespace mg {
 
 class __yield_generator_base
@@ -23,6 +27,9 @@ private:
   __yield_generator_base& operator=(const __yield_generator_base&) = delete;
 
 protected:
+  bool is_empty() const noexcept;
+
+protected:
   __priv_base* d_;
 };
 
@@ -32,20 +39,36 @@ protected:
   __priv_base() noexcept;
 public:
   virtual ~__priv_base() noexcept;
+
+public:
+  void set_thread(::std::thread&& t);
+
+private:
+  ::std::thread thread_;
 };
+
+inline __yield_generator_base::__yield_generator_base(__priv_base* d) noexcept :
+  d_{d}
+{
+}
+
+inline __yield_generator_base::~__yield_generator_base()
+{
+  delete d_;
+}
+
+inline bool __yield_generator_base::is_empty() const noexcept
+{
+  return (nullptr == d_);
+}
 
 inline __yield_generator_base::__priv_base::__priv_base() noexcept
 {
 }
 
-__yield_generator_base::__yield_generator_base(__priv_base* d) noexcept :
-  d_{d}
+inline void __yield_generator_base::__priv_base::set_thread(::std::thread&& t)
 {
-}
-
-__yield_generator_base::~__yield_generator_base()
-{
-  delete d_;
+  thread_ = ::std::move(t);
 }
 
 } // namespace mg
