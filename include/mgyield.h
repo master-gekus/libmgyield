@@ -7,6 +7,9 @@
 #ifndef MGYIELD_H_INCLUDED
 #define MGYIELD_H_INCLUDED
 
+#include <atomic>
+#include <memory>
+
 #include "mgyield_p.h"
 
 namespace mg {
@@ -35,23 +38,39 @@ public:
         ::std::is_convertible<_Fn, ::std::function<void(const yield_operator<T>&, _Args...)> >::value
         >::type
       >
-  yield_generator(const _Fn& f, _Args... args) noexcept;
+  yield_generator(_Fn&& f, _Args... args) noexcept;
 
 public:
   ~yield_generator();
 
 public:
+  const T& current() const noexcept;
+
+public:
   using __yield_generator_base::is_empty;
+  using __yield_generator_base::next;
 
 private:
   class __priv;
-  yield_operator<T> yield_;
+  __priv* d() noexcept;
+  const __priv* d() const noexcept;
 };
 
 template<typename T>
 class yield_generator<T>::__priv : public __yield_generator_base::__priv_base
 {
+public:
+  __priv() noexcept;
+
+  yield_operator<T> yield_;
+  ::std::atomic<T*> current_;
 };
+
+template<typename T>
+inline yield_generator<T>::__priv::__priv() noexcept :
+  current_{nullptr}
+{
+}
 
 template<typename T>
 inline yield_generator<T>::yield_generator() :
@@ -69,12 +88,30 @@ template<
     class _Fn,
     class... _Args,
     class>
-inline yield_generator<T>::yield_generator(const _Fn& f, _Args... args) noexcept :
+inline yield_generator<T>::yield_generator(_Fn&& f, _Args... args) noexcept :
   __yield_generator_base{new __priv}
 {
-  d_->set_thread(::std::thread([this, f](_Args... args) {
-    f(yield_, ::std::forward<_Args>(args)...);
-  }, ::std::forward<_Args>(args)...));
+  d_->set_thread(::std::thread([this](_Fn&& f, _Args... args) {
+    ::std::forward<_Fn>(f)(d()->yield_, ::std::forward<_Args>(args)...);
+  }, ::std::forward<_Fn>(f), ::std::forward<_Args>(args)...));
+}
+
+template<typename T>
+const T& yield_generator<T>::current() const noexcept
+{
+  return *(d()->current_);
+}
+
+template<typename T>
+inline typename yield_generator<T>::__priv* yield_generator<T>::d() noexcept
+{
+  return static_cast<__priv*>(d_);
+}
+
+template<typename T>
+inline const typename yield_generator<T>::__priv* yield_generator<T>::d() const noexcept
+{
+  return static_cast<const __priv*>(d_);
 }
 
 } // namespace mg

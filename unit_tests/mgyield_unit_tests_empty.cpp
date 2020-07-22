@@ -38,3 +38,10 @@ TEST(ConstructorDestructor, EmptyGenerator)
     EXPECT_FALSE(g.is_empty());
   }
 }
+
+TEST(Next, Empty)
+{
+  ::mg::yield_generator<int> g;
+  EXPECT_TRUE(g.is_empty());
+  EXPECT_FALSE(g.next());
+}
