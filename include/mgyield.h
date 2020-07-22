@@ -48,6 +48,7 @@ public:
 
 public:
   using __yield_generator_base::is_empty;
+  using __yield_generator_base::is_finished;
   using __yield_generator_base::next;
 
 private:
@@ -88,11 +89,20 @@ template<
     class _Fn,
     class... _Args,
     class>
-inline yield_generator<T>::yield_generator(_Fn&& f, _Args... args) noexcept :
+inline yield_generator<T>::yield_generator(_Fn&& f, _Args... args) noexcept:
   __yield_generator_base{new __priv}
 {
+  d_->set_state(Waiting);
   d_->set_thread(::std::thread([this](_Fn&& f, _Args... args) {
-    ::std::forward<_Fn>(f)(d()->yield_, ::std::forward<_Args>(args)...);
+    try {
+      d_->wait_for_next();
+      ::std::forward<_Fn>(f)(d()->yield_, ::std::forward<_Args>(args)...);
+      d_->set_state(Finished);
+    } catch (const __yield_exception&) {
+    } catch (...) {
+      d_->set_exception(::std::current_exception());
+    }
+    d_->set_state(Finished);
   }, ::std::forward<_Fn>(f), ::std::forward<_Args>(args)...));
 }
 
