@@ -7,7 +7,6 @@
 #ifndef MGYIELD_H_INCLUDED
 #define MGYIELD_H_INCLUDED
 
-#include <atomic>
 #include <memory>
 
 #include "mgyield_p.h"
@@ -81,21 +80,26 @@ public:
   __priv() noexcept;
   ~__priv() noexcept;
 
+public:
+  struct element
+  {
+    ::std::shared_ptr<element> next_;
+    T data_;
+  };
+
   yield_operator<T> yield_;
-  ::std::atomic<T*> current_;
+  ::std::shared_ptr<element> current_;
 };
 
 template<typename T>
 inline yield_generator<T>::__priv::__priv() noexcept :
-  yield_{this},
-  current_{nullptr}
+  yield_{this}
 {
 }
 
 template<typename T>
 inline yield_generator<T>::__priv::~__priv() noexcept
 {
-  delete current_.exchange(nullptr);
 }
 
 template<typename T>
@@ -134,7 +138,11 @@ yield_generator<T>::yield_generator(_Fn&& f, _Args... args) noexcept:
 template<typename T>
 inline const T& yield_generator<T>::current() const noexcept
 {
-  return *(d()->current_);
+  const __priv* p = d();
+  if ((nullptr == p) || (!p->current_)) {
+    return *(static_cast<const T*>(nullptr));
+  }
+  return p->current_->data_;
 }
 
 template<typename T>
@@ -160,7 +168,13 @@ template<typename U>
 typename ::std::enable_if<::std::is_convertible<U,T>::value>::type
 yield_operator<T>::operator() (U value) const
 {
-  delete owner_->current_.exchange(new T(::std::forward<U>(value)));
+  using element = typename yield_generator<T>::__priv::element;
+  auto new_current = ::std::make_shared<element>(element{nullptr, ::std::forward<U>(value)});
+  if (owner_->current_) {
+    owner_->current_->next_ = new_current;
+  }
+  owner_->current_ = new_current;
+
   owner_->set_state(yield_generator<T>::Waiting);
   owner_->wait_for_next();
 }
