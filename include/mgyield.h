@@ -104,7 +104,7 @@ public:
   iterator operator++(int) noexcept;
   bool operator==(const iterator& other) const;
   bool operator!=(const iterator& other) const;
-  reference operator*() const;
+  const T& operator*() const;
 
 private:
   ::std::shared_ptr<element> e_;
