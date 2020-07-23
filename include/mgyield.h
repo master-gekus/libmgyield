@@ -15,9 +15,7 @@
 namespace mg {
 
 template<typename T>
-class yield_operator
-{
-};
+class yield_operator;
 
 template<typename T>
 class yield_generator : public __yield_generator_base
@@ -55,6 +53,25 @@ private:
   class __priv;
   __priv* d() noexcept;
   const __priv* d() const noexcept;
+
+  friend class yield_operator<T>;
+};
+
+template<typename T>
+class yield_operator
+{
+private:
+  explicit yield_operator(typename yield_generator<T>::__priv* owner) noexcept;
+
+public:
+  template<typename U>
+  typename ::std::enable_if<::std::is_convertible<U,T>::value>::type
+  operator() (U value) const;
+
+private:
+  typename yield_generator<T>::__priv* owner_;
+
+  friend class yield_generator<T>;
 };
 
 template<typename T>
@@ -62,6 +79,7 @@ class yield_generator<T>::__priv : public __yield_generator_base::__priv_base
 {
 public:
   __priv() noexcept;
+  ~__priv() noexcept;
 
   yield_operator<T> yield_;
   ::std::atomic<T*> current_;
@@ -69,8 +87,15 @@ public:
 
 template<typename T>
 inline yield_generator<T>::__priv::__priv() noexcept :
+  yield_{this},
   current_{nullptr}
 {
+}
+
+template<typename T>
+inline yield_generator<T>::__priv::~__priv() noexcept
+{
+  delete current_;
 }
 
 template<typename T>
@@ -89,7 +114,7 @@ template<
     class _Fn,
     class... _Args,
     class>
-inline yield_generator<T>::yield_generator(_Fn&& f, _Args... args) noexcept:
+yield_generator<T>::yield_generator(_Fn&& f, _Args... args) noexcept:
   __yield_generator_base{new __priv}
 {
   d_->set_state(Waiting);
@@ -107,7 +132,7 @@ inline yield_generator<T>::yield_generator(_Fn&& f, _Args... args) noexcept:
 }
 
 template<typename T>
-const T& yield_generator<T>::current() const noexcept
+inline const T& yield_generator<T>::current() const noexcept
 {
   return *(d()->current_);
 }
@@ -122,6 +147,23 @@ template<typename T>
 inline const typename yield_generator<T>::__priv* yield_generator<T>::d() const noexcept
 {
   return static_cast<const __priv*>(d_);
+}
+
+template<typename T>
+inline yield_operator<T>::yield_operator(typename yield_generator<T>::__priv* owner) noexcept :
+  owner_{owner}
+{
+}
+
+template<typename T>
+template<typename U>
+typename ::std::enable_if<::std::is_convertible<U,T>::value>::type
+yield_operator<T>::operator() (U value) const
+{
+  delete owner_->current_;
+  owner_->current_ = new T(::std::forward<U>(value));
+  owner_->set_state(yield_generator<T>::Waiting);
+  owner_->wait_for_next();
 }
 
 } // namespace mg
