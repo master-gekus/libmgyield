@@ -95,7 +95,7 @@ inline yield_generator<T>::__priv::__priv() noexcept :
 template<typename T>
 inline yield_generator<T>::__priv::~__priv() noexcept
 {
-  delete current_;
+  delete current_.exchange(nullptr);
 }
 
 template<typename T>
@@ -160,8 +160,7 @@ template<typename U>
 typename ::std::enable_if<::std::is_convertible<U,T>::value>::type
 yield_operator<T>::operator() (U value) const
 {
-  delete owner_->current_;
-  owner_->current_ = new T(::std::forward<U>(value));
+  delete owner_->current_.exchange(new T(::std::forward<U>(value)));
   owner_->set_state(yield_generator<T>::Waiting);
   owner_->wait_for_next();
 }
