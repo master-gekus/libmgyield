@@ -8,6 +8,7 @@
 #define MGYIELD_H_INCLUDED
 
 #include <memory>
+#include <iterator>
 
 #include "mgyield_p.h"
 
@@ -48,10 +49,21 @@ public:
   using __yield_generator_base::is_finished;
   using __yield_generator_base::next;
 
+public:
+  class iterator;
+  iterator begin();
+  iterator end();
+
 private:
   class __priv;
   __priv* d() noexcept;
   const __priv* d() const noexcept;
+
+  struct element
+  {
+    ::std::shared_ptr<element> next_;
+    T data_;
+  };
 
   friend class yield_operator<T>;
 };
@@ -74,6 +86,33 @@ private:
 };
 
 template<typename T>
+class yield_generator<T>::iterator : public ::std::iterator<::std::forward_iterator_tag, T>
+{
+private:
+  iterator() noexcept;
+  iterator(const ::std::shared_ptr<element>& source) noexcept;
+
+public:
+  iterator(const iterator& other) noexcept;
+  iterator(iterator&& other) noexcept;
+
+  iterator& operator=(const iterator& other) noexcept;
+  iterator& operator=(iterator&& other) noexcept;
+
+public:
+  iterator& operator++() noexcept;
+  iterator operator++(int) noexcept;
+  bool operator==(const iterator& other) const;
+  bool operator!=(const iterator& other) const;
+  reference operator*() const;
+
+private:
+  ::std::shared_ptr<element> e_;
+
+  friend class yield_generator<T>;
+};
+
+template<typename T>
 class yield_generator<T>::__priv : public __yield_generator_base::__priv_base
 {
 public:
@@ -81,12 +120,6 @@ public:
   ~__priv() noexcept;
 
 public:
-  struct element
-  {
-    ::std::shared_ptr<element> next_;
-    T data_;
-  };
-
   yield_operator<T> yield_;
   ::std::shared_ptr<element> current_;
 };
@@ -146,6 +179,98 @@ inline const T& yield_generator<T>::current() const noexcept
 }
 
 template<typename T>
+typename yield_generator<T>::iterator yield_generator<T>::begin()
+{
+  __priv* p = d();
+  if (nullptr == p) {
+    return iterator();
+  }
+
+  if (!p->current_) {
+    p->next();
+  }
+
+  return iterator(p->current_);
+}
+
+template<typename T>
+typename yield_generator<T>::iterator yield_generator<T>::end()
+{
+  return iterator();
+}
+
+template<typename T>
+inline yield_generator<T>::iterator::iterator() noexcept
+{
+}
+
+template<typename T>
+inline yield_generator<T>::iterator::iterator(const ::std::shared_ptr<element>& source) noexcept :
+  e_{source}
+{
+}
+
+template<typename T>
+inline yield_generator<T>::iterator::iterator(const iterator& other) noexcept :
+  e_{other.e_}
+{
+}
+
+template<typename T>
+inline yield_generator<T>::iterator::iterator(iterator&& other) noexcept:
+  e_{::std::move(other.e_)}
+{
+}
+
+template<typename T>
+inline typename yield_generator<T>::iterator& yield_generator<T>::iterator::operator=(const iterator& other) noexcept
+{
+  e_.operator=(other.e_);
+  return *this;
+}
+
+template<typename T>
+inline typename yield_generator<T>::iterator& yield_generator<T>::iterator::operator=(iterator&& other) noexcept
+{
+  e_.operator=(::std::move(other.e_));
+  return *this;
+}
+
+template<typename T>
+inline typename yield_generator<T>::iterator& yield_generator<T>::iterator::operator++() noexcept
+{
+  if (e_) {
+    e_ = e_->next_;
+  }
+
+  return *this;
+}
+
+template<typename T>
+inline typename yield_generator<T>::iterator yield_generator<T>::iterator::operator++(int) noexcept
+{
+  if (!e_) {
+    return iterator();
+  }
+
+  iterator ret{*this};
+  e_ = e_->next_;
+  return ret;
+}
+
+template<typename T>
+inline bool yield_generator<T>::iterator::operator==(const iterator& other) const
+{
+  return (e_ == other.e_);
+}
+
+template<typename T>
+inline bool yield_generator<T>::iterator::operator!=(const iterator& other) const
+{
+  return (e_ != other.e_);
+}
+
+template<typename T>
 inline typename yield_generator<T>::__priv* yield_generator<T>::d() noexcept
 {
   return static_cast<__priv*>(d_);
@@ -168,7 +293,7 @@ template<typename U>
 typename ::std::enable_if<::std::is_convertible<U,T>::value>::type
 yield_operator<T>::operator() (U value) const
 {
-  using element = typename yield_generator<T>::__priv::element;
+  using element = typename yield_generator<T>::element;
   auto new_current = ::std::make_shared<element>(element{nullptr, ::std::forward<U>(value)});
   if (owner_->current_) {
     owner_->current_->next_ = new_current;
