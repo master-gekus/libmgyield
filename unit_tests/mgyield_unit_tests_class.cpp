@@ -72,8 +72,8 @@ TEST(Next, SimpleClass_01)
   ::mg::yield_generator<test_simple_class> g([](const mg::yield_operator<test_simple_class>& yield) {
     yield(test_simple_class{1, 2});
 
-    test_simple_class с{1, 2};
-    yield(с);
+    test_simple_class cl{1, 2};
+    yield(cl);
   });
 
   EXPECT_FALSE(g.is_empty());
@@ -89,8 +89,8 @@ TEST(Next, SimpleClass_02)
   ::mg::yield_generator<test_simple_class> g([](const mg::yield_operator<test_simple_class>& yield) {
     yield(test_simple_class{1, 2});
 
-    test_simple_class с{3, 4};
-    yield(с);
+    test_simple_class cl{3, 4};
+    yield(cl);
   });
 
   EXPECT_FALSE(g.is_empty());
@@ -139,8 +139,8 @@ TEST(Next, PolymorphicClass_01)
   ::mg::yield_generator<test_polymorphic_class> g([](const mg::yield_operator<test_polymorphic_class>& yield) {
     yield(test_polymorphic_class{1, 2});
 
-    test_polymorphic_class с{1, 2};
-    yield(с);
+    test_polymorphic_class cl{1, 2};
+    yield(cl);
   });
 
   EXPECT_FALSE(g.is_empty());
@@ -156,8 +156,8 @@ TEST(Next, PolymorphicClass_02)
   ::mg::yield_generator<test_polymorphic_class> g([](const mg::yield_operator<test_polymorphic_class>& yield) {
     yield(test_polymorphic_class{1, 2});
 
-    test_polymorphic_class с{3, 4};
-    yield(с);
+    test_polymorphic_class cl{3, 4};
+    yield(cl);
   });
 
   EXPECT_FALSE(g.is_empty());
