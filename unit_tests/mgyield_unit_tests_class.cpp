@@ -22,6 +22,8 @@ public:
   {
     return ((a_ == other.a_) && (b_ == other.b_));
   }
+  inline int a() const noexcept { return a_; }
+  inline int b() const noexcept { return b_; }
 
 private:
   int a_;
@@ -53,6 +55,8 @@ public:
   {
     return ((a_ == other.a_) && (b_ == other.b_));
   }
+  inline int a() const noexcept { return a_; }
+  inline int b() const noexcept { return b_; }
 
 private:
   int a_;
@@ -199,4 +203,92 @@ TEST(Next, PolymorphicClass_03)
   EXPECT_EQ(g.current(), test_polymorphic_class(3,9));
 
   EXPECT_FALSE(g.is_finished());
+}
+
+TEST(Iterators, SimpleClass_01)
+{
+  ::mg::yield_generator<test_simple_class> g([](const mg::yield_operator<test_simple_class>& yield) {
+    for (int i = 1; true; ++i) {
+      yield(test_simple_class{i, i * i});
+    }
+  });
+
+  EXPECT_FALSE(g.is_empty());
+  EXPECT_FALSE(g.is_finished());
+
+  auto it = g.begin();
+  ASSERT_NE(it, g.end());
+  EXPECT_EQ(*it, test_simple_class(1,1));
+  EXPECT_FALSE(g.is_finished());
+
+  auto it1 = it;
+  EXPECT_EQ(it1, it);
+  ASSERT_NE(it, g.end());
+  ASSERT_NE(it1, g.end());
+
+  auto it2 = ::std::move(it);
+  EXPECT_NE(it2, it);
+  EXPECT_EQ(it, g.end());
+  ASSERT_NE(it1, g.end());
+  EXPECT_EQ(it1, it2);
+
+  EXPECT_EQ(*(it1++), test_simple_class(1,1));
+  EXPECT_EQ(*(it1++), test_simple_class(2,4));
+  EXPECT_EQ(*(it1++), test_simple_class(3,9));
+
+  EXPECT_NE(it1, it2);
+
+  EXPECT_EQ(*(it2++), test_simple_class(1,1));
+  EXPECT_EQ(*(it2++), test_simple_class(2,4));
+  EXPECT_EQ(*(it2++), test_simple_class(3,9));
+
+  EXPECT_EQ(it1, it2);
+  EXPECT_EQ(*(it2++), test_simple_class(4,16));
+
+  EXPECT_EQ(it2->a(), 5);
+  EXPECT_EQ(it2->b(), 25);
+}
+
+TEST(Iterators, PolymorphicClass_01)
+{
+  ::mg::yield_generator<test_polymorphic_class> g([](const mg::yield_operator<test_polymorphic_class>& yield) {
+    for (int i = 1; true; ++i) {
+      yield(test_polymorphic_class{i, i * i});
+    }
+  });
+
+  EXPECT_FALSE(g.is_empty());
+  EXPECT_FALSE(g.is_finished());
+
+  auto it = g.begin();
+  ASSERT_NE(it, g.end());
+  EXPECT_EQ(*it, test_polymorphic_class(1,1));
+  EXPECT_FALSE(g.is_finished());
+
+  auto it1 = it;
+  EXPECT_EQ(it1, it);
+  ASSERT_NE(it, g.end());
+  ASSERT_NE(it1, g.end());
+
+  auto it2 = ::std::move(it);
+  EXPECT_NE(it2, it);
+  EXPECT_EQ(it, g.end());
+  ASSERT_NE(it1, g.end());
+  EXPECT_EQ(it1, it2);
+
+  EXPECT_EQ(*(it1++), test_polymorphic_class(1,1));
+  EXPECT_EQ(*(it1++), test_polymorphic_class(2,4));
+  EXPECT_EQ(*(it1++), test_polymorphic_class(3,9));
+
+  EXPECT_NE(it1, it2);
+
+  EXPECT_EQ(*(it2++), test_polymorphic_class(1,1));
+  EXPECT_EQ(*(it2++), test_polymorphic_class(2,4));
+  EXPECT_EQ(*(it2++), test_polymorphic_class(3,9));
+
+  EXPECT_EQ(it1, it2);
+  EXPECT_EQ(*(it2++), test_polymorphic_class(4,16));
+
+  EXPECT_EQ(it2->a(), 5);
+  EXPECT_EQ(it2->b(), 25);
 }

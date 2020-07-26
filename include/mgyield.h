@@ -90,7 +90,7 @@ class yield_generator<T>::iterator : public ::std::iterator<::std::forward_itera
 {
 private:
   iterator() noexcept;
-  iterator(const ::std::shared_ptr<element>& source) noexcept;
+  iterator(yield_generator<T>* generator, const ::std::shared_ptr<element>& source) noexcept;
 
 public:
   iterator(const iterator& other) noexcept;
@@ -105,9 +105,11 @@ public:
   bool operator==(const iterator& other) const;
   bool operator!=(const iterator& other) const;
   const T& operator*() const;
+  const T* operator->() const;
 
 private:
   ::std::shared_ptr<element> e_;
+  yield_generator<T>::__priv* g_;
 
   friend class yield_generator<T>;
 };
@@ -190,7 +192,7 @@ typename yield_generator<T>::iterator yield_generator<T>::begin()
     p->next();
   }
 
-  return iterator(p->current_);
+  return iterator{this, p->current_};
 }
 
 template<typename T>
@@ -200,32 +202,39 @@ typename yield_generator<T>::iterator yield_generator<T>::end()
 }
 
 template<typename T>
-inline yield_generator<T>::iterator::iterator() noexcept
+inline yield_generator<T>::iterator::iterator() noexcept :
+  g_{nullptr}
 {
 }
 
 template<typename T>
-inline yield_generator<T>::iterator::iterator(const ::std::shared_ptr<element>& source) noexcept :
-  e_{source}
+inline yield_generator<T>::iterator::iterator(yield_generator<T>* generator,
+                                              const ::std::shared_ptr<element>& source) noexcept :
+  e_{source},
+  g_{generator->d()}
 {
 }
 
 template<typename T>
 inline yield_generator<T>::iterator::iterator(const iterator& other) noexcept :
-  e_{other.e_}
+  e_{other.e_},
+  g_{other.g_}
 {
 }
 
 template<typename T>
 inline yield_generator<T>::iterator::iterator(iterator&& other) noexcept:
-  e_{::std::move(other.e_)}
+  e_{::std::move(other.e_)},
+  g_{::std::move(other.g_)}
 {
+  other.g_ = nullptr;
 }
 
 template<typename T>
 inline typename yield_generator<T>::iterator& yield_generator<T>::iterator::operator=(const iterator& other) noexcept
 {
   e_.operator=(other.e_);
+  g_ = other.g_;
   return *this;
 }
 
@@ -233,12 +242,18 @@ template<typename T>
 inline typename yield_generator<T>::iterator& yield_generator<T>::iterator::operator=(iterator&& other) noexcept
 {
   e_.operator=(::std::move(other.e_));
+  g_ = ::std::move(other.g_);
+  other.g_ = nullptr;
   return *this;
 }
 
 template<typename T>
-inline typename yield_generator<T>::iterator& yield_generator<T>::iterator::operator++() noexcept
+typename yield_generator<T>::iterator& yield_generator<T>::iterator::operator++() noexcept
 {
+  if (g_) {
+    g_->next();
+  }
+
   if (e_) {
     e_ = e_->next_;
   }
@@ -247,8 +262,12 @@ inline typename yield_generator<T>::iterator& yield_generator<T>::iterator::oper
 }
 
 template<typename T>
-inline typename yield_generator<T>::iterator yield_generator<T>::iterator::operator++(int) noexcept
+typename yield_generator<T>::iterator yield_generator<T>::iterator::operator++(int) noexcept
 {
+  if (g_) {
+    g_->next();
+  }
+
   if (!e_) {
     return iterator();
   }
@@ -268,6 +287,18 @@ template<typename T>
 inline bool yield_generator<T>::iterator::operator!=(const iterator& other) const
 {
   return (e_ != other.e_);
+}
+
+template<typename T>
+inline const T& yield_generator<T>::iterator::operator*() const
+{
+  return static_cast<bool>(e_) ? e_->data_ : *(static_cast<const T*>(nullptr));
+}
+
+template<typename T>
+inline const T* yield_generator<T>::iterator::operator->() const
+{
+  return static_cast<bool>(e_) ? &(e_->data_) : static_cast<const T*>(nullptr);
 }
 
 template<typename T>
