@@ -144,6 +144,20 @@ inline yield_generator<T>::yield_generator() :
 }
 
 template<typename T>
+inline yield_generator<T>::yield_generator(yield_generator&& other) noexcept :
+  __yield_generator_base{other.d_}
+{
+  other.d_ = nullptr;
+}
+
+template<typename T>
+inline yield_generator<T>& yield_generator<T>::operator=(yield_generator&& other) noexcept
+{
+  ::std::swap(d_, other.d_);
+  return *this;
+}
+
+template<typename T>
 inline yield_generator<T>::~yield_generator()
 {
 }
@@ -157,17 +171,17 @@ yield_generator<T>::yield_generator(_Fn&& f, _Args... args) noexcept:
   __yield_generator_base{new __priv}
 {
   d_->set_state(Waiting);
-  d_->set_thread(::std::thread([this](_Fn&& f, _Args... args) {
+  d_->set_thread(::std::thread([](__priv* p, _Fn&& f, _Args... args) {
     try {
-      d_->wait_for_next();
-      ::std::forward<_Fn>(f)(d()->yield_, ::std::forward<_Args>(args)...);
-      d_->set_state(Finished);
+      p->wait_for_next();
+      ::std::forward<_Fn>(f)(p->yield_, ::std::forward<_Args>(args)...);
+      p->set_state(Finished);
     } catch (const __yield_exception&) {
     } catch (...) {
-      d_->set_exception(::std::current_exception());
+      p->set_exception(::std::current_exception());
     }
-    d_->set_state(Finished);
-  }, ::std::forward<_Fn>(f), ::std::forward<_Args>(args)...));
+    p->set_state(Finished);
+  }, d(), ::std::forward<_Fn>(f), ::std::forward<_Args>(args)...));
 }
 
 template<typename T>

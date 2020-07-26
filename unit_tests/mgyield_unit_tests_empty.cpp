@@ -41,6 +41,27 @@ TEST(ConstructorDestructor, EmptyGenerator_04)
   EXPECT_FALSE(g.is_empty());
 }
 
+TEST(ConstructorDestructor, Move)
+{
+  ::mg::yield_generator<int> src([](const mg::yield_operator<int>&, int){}, 1);
+  EXPECT_FALSE(src.is_empty());
+
+  ::mg::yield_generator<int> d1{::std::move(src)};
+  EXPECT_TRUE(src.is_empty());
+  EXPECT_FALSE(d1.is_empty());
+
+  ::mg::yield_generator<int> d2;
+  EXPECT_TRUE(d2.is_empty());
+  EXPECT_FALSE(d1.is_empty());
+
+  d2 = ::std::move(d1);
+  EXPECT_TRUE(d1.is_empty());
+  EXPECT_FALSE(d2.is_empty());
+
+  d2 = ::mg::yield_generator<int>();
+  EXPECT_TRUE(d2.is_empty());
+}
+
 TEST(Next, Empty)
 {
   ::mg::yield_generator<int> g;
