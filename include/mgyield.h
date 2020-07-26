@@ -109,7 +109,7 @@ public:
 
 private:
   ::std::shared_ptr<element> e_;
-  yield_generator<T>::__priv* g_;
+  typename yield_generator<T>::__priv* g_;
 
   friend class yield_generator<T>;
 };
