@@ -86,7 +86,7 @@ private:
 };
 
 template<typename T>
-class yield_generator<T>::iterator : public ::std::iterator<::std::forward_iterator_tag, T>
+class yield_generator<T>::iterator : public ::std::iterator<::std::input_iterator_tag, T>
 {
 private:
   iterator() noexcept;

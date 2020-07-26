@@ -199,6 +199,35 @@ TEST(Iterators, Integer_04)
   EXPECT_EQ(it1, it2);
 }
 
+TEST(Iterators, MultipleBegins)
+{
+  ::mg::yield_generator<int> g([](const mg::yield_operator<int>& yield) {
+    int i = 0;
+    while (true) {
+      yield(++i);
+    }
+  });
+
+  auto it1 = g.begin();
+  auto it2 = g.begin();
+  auto it3 = g.begin();
+
+  EXPECT_EQ(it1, it2);
+  EXPECT_EQ(it1, it3);
+
+  EXPECT_EQ(*(it1++), 1);
+  EXPECT_EQ(*(it2++), 1);
+  EXPECT_EQ(*it3, 1);
+
+  EXPECT_EQ(*(it1++), 2);
+  EXPECT_EQ(*it2, 2);
+  EXPECT_EQ(*it3, 1);
+
+  EXPECT_EQ(*it1, 3);
+  EXPECT_EQ(*it2, 2);
+  EXPECT_EQ(*it3, 1);
+}
+
 TEST(Container, IntegerFinite_01)
 {
   ::mg::yield_generator<int> g([](const mg::yield_operator<int>& yield, int count) {
