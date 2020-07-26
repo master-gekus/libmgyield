@@ -1,6 +1,8 @@
 #include <iostream>
 #include <iomanip>
 #include <string>
+#include <algorithm>
+#include <vector>
 
 #include <clocale>
 #include <gtest/gtest.h>
@@ -195,4 +197,58 @@ TEST(Iterators, Integer_04)
   EXPECT_EQ(*(it2++), 3);
 
   EXPECT_EQ(it1, it2);
+}
+
+TEST(Container, IntegerFinite_01)
+{
+  ::mg::yield_generator<int> g([](const mg::yield_operator<int>& yield, int count) {
+    for (int i = 0; i < count; ++i) {
+      yield(i);
+    }
+  }, 5);
+
+  EXPECT_FALSE(g.is_empty());
+  EXPECT_FALSE(g.is_finished());
+
+  auto b = g.begin();
+  auto e = g.end();
+
+  EXPECT_EQ(::std::vector<int>(b,e), ::std::vector<int>({0,1,2,3,4}));
+
+  ::std::vector<int> v;
+  ::std::copy(b, e, ::std::back_inserter(v));
+  EXPECT_EQ(v, ::std::vector<int>({0,1,2,3,4}));
+
+  v.clear();
+  ::std::copy_if(b, e, ::std::back_inserter(v), [](int x){return (1 == (x % 2));});
+  EXPECT_EQ(v, ::std::vector<int>({1,3}));
+
+  EXPECT_TRUE(g.is_finished());
+}
+
+TEST(Container, IntegerInfinite_01)
+{
+  ::mg::yield_generator<int> g([](const mg::yield_operator<int>& yield) {
+    int i = 0;
+    while (true) {
+      yield(i++);
+    }
+  });
+
+  EXPECT_FALSE(g.is_empty());
+  EXPECT_FALSE(g.is_finished());
+
+  auto b = g.begin();
+
+  ::std::vector<int> v;
+  ::std::copy_n(g.begin(), 5, ::std::back_inserter(v));
+  EXPECT_EQ(v, ::std::vector<int>({0,1,2,3,4}));
+
+  v.clear();
+  ::std::copy_n(++g.begin(), 5, ::std::back_inserter(v));
+  EXPECT_EQ(v, ::std::vector<int>({5,6,7,8,9}));
+
+  v.clear();
+  ::std::copy_n(b, 6, ::std::back_inserter(v));
+  EXPECT_EQ(v, ::std::vector<int>({0,1,2,3,4,5}));
 }
