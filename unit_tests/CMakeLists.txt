@@ -33,6 +33,7 @@ add_executable(${PROJECT_NAME}
   mgyield_unit_tests_int.cpp
   mgyield_unit_tests_string.cpp
   mgyield_unit_tests_class.cpp
+  mgyield_unit_tests_generator_class.cpp
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE

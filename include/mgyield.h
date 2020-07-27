@@ -351,4 +351,18 @@ yield_operator<T>::operator() (U value) const
 
 } // namespace mg
 
+#define YIELD_GENERATOR_DECLARE(name, type, ...) \
+  class name : public ::mg::yield_generator<type> \
+  { \
+  public: \
+    template<class... _Args> \
+    inline explicit name(_Args... args) : \
+      yield_generator<type>(&name::func, args...) {} \
+  private: \
+    static void func(const ::mg::yield_operator<type>& yield, ##__VA_ARGS__); \
+  }
+
+#define YIELD_GENERATOR_IMPLEMENT(name, type, ...) \
+  void name::func(const ::mg::yield_operator<type>& yield, ##__VA_ARGS__)
+
 #endif // MGYIELD_H_INCLUDED
